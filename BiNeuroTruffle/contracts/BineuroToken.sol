@@ -1,6 +1,6 @@
 pragma solidity ^0.4.19;
 
-library SafeMath { //standart library for uint
+library SafeMath { //standard library for uint
   function mul(uint256 a, uint256 b) internal pure returns (uint256) {
     if (a == 0 || b == 0){
         return 0;
@@ -31,7 +31,7 @@ library SafeMath { //standart library for uint
   }
 }
 
-contract Ownable { //standart contract to identify owner
+contract Ownable { //standard contract to identify owner
 
   address public owner;
 
@@ -69,14 +69,11 @@ contract BineuroToken is Ownable { //ERC - 20 token contract
   string public constant symbol = "BNR";
   string public constant name = "BiNeuro";
   uint8 public constant decimals = 3;
-  uint256 _totalSupply = (uint256)(65000000).mul((uint256)(10).pow(decimals));
+  uint256 _totalSupply = (uint256)(850000000).mul((uint256)(10).pow(decimals));
 
-  // Owner of this contract
-  address private owner;
   function getOwner()public view returns(address) {
     return owner;
   }
-  
 
   // Balances for each account
   mapping(address => uint256) balances;
@@ -84,20 +81,20 @@ contract BineuroToken is Ownable { //ERC - 20 token contract
   // Owner of account approves the transfer of an amount to another account
   mapping(address => mapping (address => uint256)) allowed;
 
-  function totalSupply() public view returns (uint256) { //standart ERC-20 function
+  function totalSupply() public view returns (uint256) { //standard ERC-20 function
     return _totalSupply;
   }
 
-  function balanceOf(address _address) public view returns (uint256 balance) {//standart ERC-20 function
+  function balanceOf(address _address) public view returns (uint256 balance) {//standard ERC-20 function
     return balances[_address];
   }
 
-  //standart ERC-20 function
+  //standard ERC-20 function
   function transfer(address _to, uint256 _amount) public returns (bool success) {
     require(this != _to);
     balances[msg.sender] = balances[msg.sender].sub(_amount);
     balances[_to] = balances[_to].add(_amount);
-    Transfer(msg.sender,_to,_amount);
+    emit Transfer(msg.sender,_to,_amount);
     return true;
   }
   
@@ -113,25 +110,26 @@ contract BineuroToken is Ownable { //ERC - 20 token contract
     balances[_from] = balances[_from].sub(_amount);
     allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
     balances[_to] = balances[_to].add(_amount);
-    Transfer(_from,_to,_amount);
+    emit Transfer(_from,_to,_amount);
     return true;
   }
 
-  //standart ERC-20 function
+  //standard ERC-20 function
   function approve(address _spender, uint256 _amount)public returns (bool success) { 
     allowed[msg.sender][_spender] = _amount;
-    Approval(msg.sender, _spender, _amount);
+    emit Approval(msg.sender, _spender, _amount);
     return true;
   }
 
-  //standart ERC-20 function
+  //standard ERC-20 function
   function allowance(address _owner, address _spender)public constant returns (uint256 remaining) {
     return allowed[_owner][_spender];
   }
 
   //Constructor
-  function BineuroToken(address _owner) public {
-    owner = _owner;
+  function BineuroToken() public {
+    owner = 0xCe390a89734B2222Ff01c9ac4fD370581DeD82E0;
+    // owner = msg.sender;
     
     balances[this] = _totalSupply;
   }
@@ -143,22 +141,24 @@ contract BineuroToken is Ownable { //ERC - 20 token contract
     crowdsaleBalance = crowdsaleBalance.sub(_value);
     balances[this] = balances[this].sub(_value);
     balances[_address] = balances[_address].add(_value);
-    Transfer(this,_address,_value);
+    emit Transfer(this,_address,_value);
   }
 
-  function burnTokens(address _address1, address _address2, uint _tokensSold) public {
+  function burnTokens(address _address1, address _address2, address _address3, uint _tokensSold) public {
     require(msg.sender == crowdsaleContract);
 
-    balances[_address1] = balances[_address1].add(_tokensSold.mul((uint)(15))/100);
-    balances[_address2] = balances[_address2].add(_tokensSold.mul((uint)(8))/100);
+    balances[this] = balances[this].sub(_tokensSold.mul((uint)(23))/100);
+    balances[_address1] = balances[_address1].add(_tokensSold.mul((uint)(75))/1000);
+    balances[_address2] = balances[_address2].add(_tokensSold.mul((uint)(75))/1000);
+    balances[_address3] = balances[_address2].add(_tokensSold.mul((uint)(8))/100);
 
-    Transfer(this,_address1,_tokensSold.mul((uint)(15))/100);
-    Transfer(this,_address2,_tokensSold.mul((uint)(8))/100);
+    emit Transfer(this,_address1,_tokensSold.mul((uint)(75))/1000);
+    emit Transfer(this,_address2,_tokensSold.mul((uint)(75))/1000);
+    emit Transfer(this,_address3,_tokensSold.mul((uint)(8))/100);
 
     _totalSupply = _totalSupply.sub(balances[this]);
-    Transfer(this,0,balances[this]);
+    emit Transfer(this,0,balances[this]);
 
     balances[this] = 0;
   }
-  
 }

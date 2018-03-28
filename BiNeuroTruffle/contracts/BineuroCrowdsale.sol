@@ -1,6 +1,6 @@
 pragma solidity ^0.4.19;
 
-library SafeMath { //standart library for uint
+library SafeMath { //standard library for uint
   function mul(uint256 a, uint256 b) internal pure returns (uint256) {
     if (a == 0 || b == 0){
         return 0;
@@ -31,7 +31,7 @@ library SafeMath { //standart library for uint
   }
 }
 
-//standart contract to identify owner
+//standard contract to identify owner
 contract Ownable {
 
   address public owner;
@@ -48,7 +48,7 @@ contract Ownable {
   }
 
   modifier onlyTechSupport() {
-    require(msg.sender == techSupport);
+    require(msg.sender == techSupport || msg.sender == owner);
     _;
   }
 
@@ -82,10 +82,10 @@ contract Ownable {
 
 //Abstract Token contract
 contract BineuroToken{
-  function setCrowdsaleContract (address) public{}
-  function sendCrowdsaleTokens(address, uint256)  public {}
-  function burnTokens(address, address, uint) public {}
-  function getOwner()public view returns(address) {}
+  function setCrowdsaleContract (address) public;
+  function sendCrowdsaleTokens(address, uint256)  public;
+  function burnTokens(address,address, address, uint) public;
+  function getOwner()public view returns(address);
 }
 
 //Crowdsale contract
@@ -93,7 +93,7 @@ contract Crowdsale is Ownable{
 
   using SafeMath for uint;
 
-  uint decimals = 3;
+  uint public decimals = 3;
   // Token contract address
   BineuroToken public token;
 
@@ -102,43 +102,35 @@ contract Crowdsale is Ownable{
     token = BineuroToken(_tokenAddress);
     techSupport = msg.sender;
 
-    // test parameter
-    // techSupport = 0x8C0F5211A006bB28D4c694dC76632901664230f9;
-
     token.setCrowdsaleContract(this);
     owner = token.getOwner();
   }
 
-  // for Test
-  // CHANGE IT before deploy into main network
-  
-  address etherDistribution1 = 0xBBBBaAeDaa53EACF57213b95cc023f668eDbA361;
-  address etherDistribution2 = 0xaeB0920be125eB72e071B1357A5c95B52D8afc65;
+  address etherDistribution1 = 0x64f89e3CE504f1b15FcD4465b780Fb393ab79187;
+  address etherDistribution2 = 0x320359973d7953FbEf62C4f50960C46D8DBE2425;
 
-  address teamAddress = 0x8C0F5211A006bB28D4c694dC76632901664230f9;
-  address bountyAddress = 0x112f94de76c8df26786671bee2ccc75bd9613a1b;
-
-  // CHANGE ABOVE before deploy into main network
-  // above is for Test
+  address bountyAddress = 0x7e06828655Ba568Bbe06eD8ce165e4052A6Ea441;
 
   //Crowdsale variables
   uint public tokensSold = 0;
   uint public ethCollected = 0;
 
   // Buy constants
-  uint minDeposit = (uint)(50).mul((uint)(10).pow(decimals));
+  uint public minDeposit = (uint)(500).mul((uint)(10).pow(decimals));
 
-  uint tokenPrice = 0.001 ether;
+  uint public tokenPrice = 0.0001 ether;
 
   // Ico constants
-  uint public icoStart = 0; //02/14/2018 1518602400
-  uint public icoFinish = 1521151199; //03/15/2018
+  uint public icoStart = 1522141200; //27.03.2018  12:00 UTC+3
+  uint public icoFinish = 1528156800; //27.03.2018  12:00 UTC+2
+
+  uint public maxCap = 47000000 ether;
 
   //Owner can change end date
-  function changeIcoFinish (uint _newDate) public onlyOwner {
+  function changeIcoFinish (uint _newDate) public onlyTechSupport {
     icoFinish = _newDate;
   }
-  
+
   //check is now ICO
   function isIco(uint _time) public view returns (bool){
     if((icoStart <= _time) && (_time < icoFinish)){
@@ -183,6 +175,7 @@ contract Crowdsale is Ownable{
   //fallback function (when investor send ether to contract)
   function() public payable{
     require(isIco(now));
+    require(ethCollected.add(msg.value) <= maxCap);
     require(buy(msg.sender,msg.value, now)); //redirect to func buy
   }
 
@@ -215,10 +208,12 @@ contract Crowdsale is Ownable{
     res = res.add(res.mul(bonus)/100);
   }
 
+  bool public isIcoEnded = false;
   function endIco () public {
+    require(!isIcoEnded);
     require(msg.sender == owner || msg.sender == techSupport);
     require(now > icoFinish + 5 days);
-    token.burnTokens(teamAddress, bountyAddress, tokensSold);
+    token.burnTokens(etherDistribution1,etherDistribution2, bountyAddress, tokensSold);
+    isIcoEnded = true;
   }
-  
 }
